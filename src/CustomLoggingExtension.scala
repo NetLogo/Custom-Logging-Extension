@@ -5,43 +5,102 @@ import scala.collection.JavaConversions.iterableAsScalaIterable
 
 class CustomLoggingExtension extends DefaultClassManager {
   def load(manager: PrimitiveManager) {
-    manager.addPrimitive("log-event", new LogEvent())
+    manager.addPrimitive("log-message",         new LogMessage)
+    manager.addPrimitive("log-globals",         new LogGlobals)
+    manager.addPrimitive("log-all-globals",     new LogAllGlobals)
+    manager.addPrimitive("log-all-globals-but", new LogAllGlobalsBut)
   }
 }
 
 /**
  *
- * Purpose: To allow insertion of more-customized logging events in NetLogo logs.
- *          Allows the user/model creator to choose when a log event in triggered, and what goes into it.
+ * Purpose: To allow insertion of a customized logging message into the NetLogo logs.
+ *          Also allows the user/model creator to place markers in the logs, and allows logging of
+ *          expression values (through use of the 'word' primitive)
  *
- * Syntax: log-event {msg} [{filter1}, {filter2}, ...]
+ * Syntax: log-message {message: String}
  *
- * Semantics:
- * -log-event: The name of this primitive
+ * Arguments:
  * -msg:       Your logging message.  Can be handy for logging an expression (i.e. 'log-event (word "Turtle count is: " (count turtles)').
- * -filters:   Filters are optional extra strings that can be specified when calling this primitive.
- *             Each filter will be interpreted as the name of a global that is to be added to the log event
- *             Filters are ignored if no primitive with the name given by the filter exists.
- *             This behavior changes a bit when "*" is one of filters passed in, though.
- *             Specifying "*" as the only filter will cause this primitive to include _all_ globals in the log event.
- *             Specifying "*" as a filter, along with {x}, {y}, and {z} will include all globals in the log event, except for {x}, {y}, and {z}.
- *             NOTE: Due to how NetLogo parses variadic primitives, using this primitive with filters requires wrapping the
- *                   entire primitive call in parentheses (i.e. 'log-event "Hi" "*"' WILL NOT COMPILE; instead, use '(log-event "Hi" "*")').
  *
  */
-class LogEvent extends DefaultCommand {
+class LogMessage extends DefaultCommand {
   override def getAgentClassString = "O---"
-  override def getSyntax = Syntax.commandSyntax(Array(StringType, RepeatableType | StringType), 1, getAgentClassString, null, false)
+  override def getSyntax = Syntax.commandSyntax(Array(StringType), 1, getAgentClassString, null, false)
   override def perform(args: Array[Argument], context: Context) {
-    if(Version.isLoggingEnabled) {
+    if (Version.isLoggingEnabled) Logger.logCustomMessage(args(0).getString)
+  }
+}
+
+protected abstract class GlobalLoggingCommand extends DefaultCommand {
+
+  override def getAgentClassString = "O---"
+  override def perform(args: Array[Argument], context: Context) {
+    if (Version.isLoggingEnabled) {
       val world                 = context.getAgent.world
-      val (msg, globalFilters)  = (args splitAt 1) match { case (msgList, filters) => (msgList.head.getString, filters map (_.getString.toUpperCase)) }
-      val isSelectingAll        = globalFilters.contains("*")
+      val specifiedGlobals      = args map (_.getString.toUpperCase)
       val nameValuePairs        = world.program.globals zip (world.observer.variables map (_.toString) toSeq) toSeq
-      val comparator            = globalFilters contains (_: (String, _))._1.toUpperCase
+      val comparator            = specifiedGlobals contains (_: (String, _))._1.toUpperCase
       val (filterIn, filterOut) = (() => nameValuePairs filter comparator, () => nameValuePairs filterNot comparator)
-      val desiredGlobals        = if (isSelectingAll) filterOut else filterIn
-      org.nlogo.api.Logger.logCustomMessage(msg, desiredGlobals(): _*)
+      val desiredGlobals        = if (selectsAllByDefault) filterOut else filterIn
+      Logger.logCustomGlobals(desiredGlobals(): _*)
     }
   }
+
+   override def getSyntax: Syntax
+  protected def selectsAllByDefault: Boolean
+
+}
+
+
+/**
+ *
+ * Purpose: To allow more control over insertion of globals into the NetLogo logs.  Selects globals additively.
+ *
+ * Syntax: log-globals [{global1: String} {global2: String} ...]
+ *
+ * Arguments:
+ * -globals:   Each 'global' will be interpreted as the name of a global variable that should be added to the log event created by this call.
+ *             'global's are ignored if no global variable with the name given by the 'global' exists.
+ *             NOTE: Due to how NetLogo parses variadic primitives, using this primitive with with more than one 'global' requires wrapping
+ *                   the entire primitive call in parentheses (i.e. 'log-globals "a" "b"' WILL NOT COMPILE; instead, use '(log-event "a" "b")').
+ *
+ */
+class LogGlobals extends GlobalLoggingCommand {
+            override def getSyntax = Syntax.commandSyntax(Array(RepeatableType | StringType), 1, getAgentClassString, null, false)
+  protected override def selectsAllByDefault = false
+}
+
+
+/**
+ *
+ * Purpose: To allow more control over insertion of globals into the NetLogo logs.  Selects globals universally.
+ *
+ * Syntax: log-all-globals
+ *
+ */
+class LogAllGlobals extends GlobalLoggingCommand {
+            override def getSyntax = Syntax.commandSyntax(Array[Int](), 0, getAgentClassString, null, false)
+  protected override def selectsAllByDefault = true
+}
+
+
+/**
+ *
+ * Purpose: To allow more control over insertion of globals into the NetLogo logs.
+ *          Begins by selecting globals universally, then deselects globals additively.
+ *
+ * Syntax: log-all-globals-but [{global1: String} {global2: String} ...]
+ *
+ * Arguments:
+ * -globals:   Each 'global' will be interpreted as the name of a global variable that should _not_ be added to the log event created by this call.
+ *             'global's are ignored if no global variable with the name given by the 'global' exists.
+ *             NOTE: Due to how NetLogo parses variadic primitives, using this primitive with filters requires wrapping the
+ *                   entire primitive call in parentheses (i.e. 'log-globals-but "a" "b"' WILL NOT COMPILE;
+ *                   instead, use '(log-globals-but "a" "b")').
+ *
+ */
+class LogAllGlobalsBut extends GlobalLoggingCommand {
+            override def getSyntax = Syntax.commandSyntax(Array(RepeatableType | StringType), 1, getAgentClassString, null, false)
+  protected override def selectsAllByDefault = true
 }
