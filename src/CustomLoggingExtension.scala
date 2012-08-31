@@ -28,7 +28,7 @@ class LogMessage extends DefaultCommand {
   override def getAgentClassString = "O---"
   override def getSyntax = Syntax.commandSyntax(Array(StringType), 1, getAgentClassString, null, false)
   override def perform(args: Array[Argument], context: Context) {
-    if (Version.isLoggingEnabled) Logger.logCustomMessage(args(0).getString)
+    if (Version.isLoggingEnabled) context.logCustomMessage(args(0).getString)
   }
 }
 
@@ -43,7 +43,7 @@ protected abstract class GlobalLoggingCommand extends DefaultCommand {
       val comparator            = specifiedGlobals contains (_: (String, _))._1.toUpperCase
       val (filterIn, filterOut) = (() => nameValuePairs filter comparator, () => nameValuePairs filterNot comparator)
       val desiredGlobals        = if (selectsAllByDefault) filterOut else filterIn
-      Logger.logCustomGlobals(desiredGlobals(): _*)
+      context.logCustomGlobals(desiredGlobals())
     }
   }
 
