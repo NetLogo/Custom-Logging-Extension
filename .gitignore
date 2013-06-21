@@ -1,3 +1,4 @@
-classes
+/project
+/target
 *.jar
 *.jar.pack.gz
