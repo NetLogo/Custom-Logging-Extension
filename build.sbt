@@ -14,7 +14,7 @@ artifactName := { (_, _, _) => "custom-logging.jar" }
 packageOptions := Seq(
   Package.ManifestAttributes(
     ("Extension-Name", "custom-logging"),
-    ("Class-Manager", "org.nlogo.extensions.CustomLoggingExtension"),
+    ("Class-Manager", "org.nlogo.extensions.logging.CustomLoggingExtension"),
     ("NetLogo-Extension-API-Version", "5.0")))
 
 packageBin in Compile <<= (packageBin in Compile, baseDirectory, streams) map {
