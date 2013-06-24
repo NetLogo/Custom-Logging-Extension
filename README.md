@@ -16,7 +16,7 @@ The Custom Logging has just a handful of primitives.
   * Writes to the logs the values of each valid global variable whose name was supplied to the primitive as an argument.
 * `log-all-globals`
   * Writes to the logs the values of all globals in the model.
-* `log-all-globals-but`
+* `log-all-globals-but <global-name>*`
   * Writes to the logs the values of all globals in the model but the ones whose names are supplied to the primitive as arguments.
 
 ## Terms of Use
