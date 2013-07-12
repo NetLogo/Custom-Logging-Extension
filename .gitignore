@@ -1,4 +1,3 @@
-/project
-/target
+target/
 *.jar
 *.jar.pack.gz
