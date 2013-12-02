@@ -48,7 +48,7 @@ protected trait GlobalLoggingCommand extends LoggingCommand {
 
 protected trait LoggingCommand extends DefaultCommand {
 
-  override def getAgentClassString = "O---"
+  override def getAgentClassString = "OTPL"
   override def getSyntax           = commandSyntax(primArgsSyntax)
 
   final override def perform(args: Array[Argument], context: Context) {
