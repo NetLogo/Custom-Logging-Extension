@@ -1,9 +1,8 @@
-scalaVersion := "2.9.2"
+scalaVersion := "2.9.3"
 
 scalaSource in Compile <<= baseDirectory(_ / "src")
 
-scalacOptions ++= Seq("-deprecation", "-unchecked", "-Xfatal-warnings",
-                      "-encoding", "us-ascii")
+scalacOptions ++= Seq("-deprecation", "-unchecked", "-Xfatal-warnings", "-encoding", "us-ascii")
 
 libraryDependencies +=
   "org.nlogo" % "NetLogo" % "5.0.x" from
