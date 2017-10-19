@@ -1,9 +1,14 @@
 package org.nlogo.extensions.logging
 
 import
-  org.nlogo.api.{ Argument, Context, DefaultCommand, Syntax, Version },
+  org.nlogo.core.Syntax,
     Syntax.{ commandSyntax, RepeatableType, StringType }
 
+import
+  org.nlogo.api.{ Argument, Context, Command, Version }
+
+import
+  org.nlogo.window.GUIWorkspace
 
 /**
  * Created with IntelliJ IDEA.
@@ -13,22 +18,22 @@ import
  */
 
 object LogMessage extends LoggingCommand {
-  override protected def primArgsSyntax = Array(StringType)
+  override protected def primArgsSyntax = List(StringType)
   override protected def performLogging(args: Array[Argument], context: Context) {
-    context.logCustomMessage(args(0).getString)
+    context.workspace.asInstanceOf[GUIWorkspace].logCustomMessage(args(0).getString)
   }
 }
 
 object LogGlobals extends GlobalLoggingCommand with LazySelector {
-  override protected def primArgsSyntax = Array(RepeatableType | StringType)
+  override protected def primArgsSyntax = List(RepeatableType | StringType)
 }
 
 object LogAllGlobals extends GlobalLoggingCommand with GreedySelector {
-  override protected def primArgsSyntax = Array()
+  override protected def primArgsSyntax = List()
 }
 
 object LogAllGlobalsBut extends GlobalLoggingCommand with GreedySelector {
-  override protected def primArgsSyntax = Array(RepeatableType | StringType)
+  override protected def primArgsSyntax = List(RepeatableType | StringType)
 }
 
 protected trait GlobalLoggingCommand extends LoggingCommand {
@@ -39,24 +44,22 @@ protected trait GlobalLoggingCommand extends LoggingCommand {
     import scala.collection.JavaConversions.iterableAsScalaIterable
     val world              = context.getAgent.world
     val targets            = args map (_.getString.toUpperCase)
-    val nameValuePairs     = world.program.globals zip (world.observer.variables map (_.toString) toSeq) toSeq
+    val nameValuePairs     = world.program.globals zip (world.observer.variables.map(_.toString).toSeq).toSeq
     val comparator: Filter = { case (global, _) => targets contains global.toUpperCase }
-    context.logCustomGlobals(select(nameValuePairs, comparator))
+    context.workspace.asInstanceOf[GUIWorkspace].logCustomGlobals(select(nameValuePairs, comparator))
   }
 
 }
 
-protected trait LoggingCommand extends DefaultCommand {
-
-  override def getAgentClassString = "OTPL"
-  override def getSyntax           = commandSyntax(primArgsSyntax)
+protected trait LoggingCommand extends Command {
+  override def getSyntax           = commandSyntax(primArgsSyntax, agentClassString = "OTPL")
 
   final override def perform(args: Array[Argument], context: Context) {
     if (Version.isLoggingEnabled)
       performLogging(args, context)
   }
 
-  protected def primArgsSyntax: Array[Int]
+  protected def primArgsSyntax: List[Int]
   protected def performLogging(args: Array[Argument], context: Context)
 
 }
