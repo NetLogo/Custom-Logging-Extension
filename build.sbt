@@ -1,14 +1,14 @@
-scalaVersion := "2.9.3"
+enablePlugins(org.nlogo.build.NetLogoExtension)
 
-scalaSource in Compile <<= baseDirectory(_ / "src")
+scalaVersion := "2.12.2"
 
-scalacOptions ++= Seq("-deprecation", "-unchecked", "-Xfatal-warnings", "-encoding", "us-ascii")
+scalaSource in Compile := baseDirectory.value / "src"
 
-libraryDependencies += "org.nlogo" % "NetLogo" % "5.x-SNAPSHOT" from "http://ccl.northwestern.edu/devel/NetLogo-dfa6f6e.jar"
+scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xfatal-warnings", "-encoding", "us-ascii")
 
 name := "custom-logging"
 
-NetLogoExtension.settings
+netLogoVersion := "6.0.2"
 
-NetLogoExtension.classManager := "org.nlogo.extensions.logging.CustomLoggingExtension"
+netLogoClassManager := "org.nlogo.extensions.logging.CustomLoggingExtension"
 
